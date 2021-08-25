@@ -29,4 +29,5 @@ For Auth, in user secrets set the override for the app settings:
 
 Registration in azure AD for an app client ID is required.
 Then on accessing https://localhost:44321/private - you will need to authenticate.
-  
+
+https://localhost:44321 - publically available endpoint
