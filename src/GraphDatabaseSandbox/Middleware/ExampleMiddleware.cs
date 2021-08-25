@@ -1,21 +1,26 @@
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace GraphDatabaseSandbox
 {
     public class ExampleMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ExampleMiddleware> _logger;
 
-        public ExampleMiddleware(RequestDelegate next)
+        public ExampleMiddleware(RequestDelegate next, ILogger<ExampleMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         // Test with https://localhost:5001/***/?option=Hello
         public async Task Invoke(HttpContext httpContext)
         {
+            _logger.LogDebug("******* Middleware hit debug *******");
+            _logger.LogInformation("******* Middleware hit info *******");
             var option = httpContext.Request.Query["option"];
 
             if (!string.IsNullOrWhiteSpace(option))

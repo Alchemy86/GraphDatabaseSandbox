@@ -1,0 +1,18 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [{
+        "name": "GraphDatabaseSandbox",
+        "type": "coreclr",
+        "request": "launch",
+        "preLaunchTask": "build",
+        "program": "${workspaceFolder}/src/GraphDatabaseSandbox/bin/Debug/net5.0/GraphDatabaseSandbox.dll",
+        "args": [],
+        "cwd": "${workspaceFolder}/src/GraphDatabaseSandbox",
+        "console": "internalConsole",
+        "stopAtEntry": false,
+        "internalConsoleOptions": "openOnSessionStart"
+    }]
+}

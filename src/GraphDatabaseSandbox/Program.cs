@@ -1,15 +1,16 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Identity.Web;
 using Serilog;
 
-[assembly: UserSecretsId("aspnet-TestApp-4bdb4f05-4dce-4136-9db4-ee487faf451d")]
 namespace GraphDatabaseSandbox
 {
     internal class Program
@@ -21,9 +22,11 @@ namespace GraphDatabaseSandbox
 
         private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                //.UseEnvironment(Microsoft.Extensions.Hosting.Environments.Development)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.CaptureStartupErrors(true);
+                    webBuilder.UseUrls("https://localhost:44321/"); 
                     webBuilder.Configure(app => {
                         // Configure services without a startup
                         var env = app.ApplicationServices.GetRequiredService<IWebHostEnvironment>();
@@ -36,8 +39,14 @@ namespace GraphDatabaseSandbox
                         app.UseRouting();
                         app.UseCors();
 
+                        app.UseAuthentication();
+                        app.UseAuthorization();
+
                         app.UseEndpoints(endpoints =>
                         {
+                            endpoints.MapControllerRoute(
+                            name: "default",
+                            pattern: "{controller=Home}/{action=Index}/{id?}");
                             endpoints.MapControllers();
                         });
                     });
@@ -49,14 +58,25 @@ namespace GraphDatabaseSandbox
                 })
                 .ConfigureServices((services) =>
                 {
+                    var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Microsoft.Extensions.Hosting.Environments.Development;
+                    var configurationBuilder = new ConfigurationBuilder()
+                        .AddJsonFile(@"appsettings.json", false);
+
+                    if (isDevelopment)
+                        configurationBuilder.AddUserSecrets<Program>();
+
+                    var configuration = configurationBuilder.Build();
+
+                    services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
+                        .AddMicrosoftIdentityWebApp(configuration.GetSection("AzureAd"));
                     // Add all controllers
                     services.AddControllers(options =>
                     {
                         options.RespectBrowserAcceptHeader = true; // false by default
                     })
-                    //support application/xml
-                    .AddXmlSerializerFormatters()
-                    .AddXmlDataContractSerializerFormatters()
+                    //support application/xml - Erroring
+                    //.AddXmlSerializerFormatters()
+                    //.AddXmlDataContractSerializerFormatters()
                     .AddJsonOptions(options => 
                         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
 
