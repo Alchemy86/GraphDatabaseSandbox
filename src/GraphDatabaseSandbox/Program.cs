@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -52,24 +51,22 @@ namespace GraphDatabaseSandbox
                     });
                 })
                 .ConfigureHostConfiguration((configHost) => {
-                    configHost.SetBasePath(Directory.GetCurrentDirectory());
                     configHost.AddEnvironmentVariables(prefix: "PREFIX_");
                     configHost.AddCommandLine(args);
                 })
-                .ConfigureServices((services) =>
+                .ConfigureAppConfiguration((hostContext, configHost) => {
+                    configHost.SetBasePath(Directory.GetCurrentDirectory());
+                    configHost.AddJsonFile(@"appsettings.json", false);
+
+                    if(hostContext.HostingEnvironment.IsDevelopment()) {
+                        configHost.AddUserSecrets<Program>();
+                    }
+                })
+                .ConfigureServices((hostContext, services) =>
                 {
-                    var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == Microsoft.Extensions.Hosting.Environments.Development;
-                    var configurationBuilder = new ConfigurationBuilder()
-                        .AddJsonFile(@"appsettings.json", false);
-
-                    if (isDevelopment)
-                        configurationBuilder.AddUserSecrets<Program>();
-
-                    var configuration = configurationBuilder.Build();
-
                     services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
-                        .AddMicrosoftIdentityWebApp(configuration.GetSection("AzureAd"));
-                    // Add all controllers
+                        .AddMicrosoftIdentityWebApp(hostContext.Configuration.GetSection("AzureAd"));
+
                     services.AddControllers(options =>
                     {
                         options.RespectBrowserAcceptHeader = true; // false by default
@@ -89,14 +86,8 @@ namespace GraphDatabaseSandbox
 
                 }).ConfigureLogging((hostBuilder, configureLogging) =>
                 {
-                    var configuration = new ConfigurationBuilder()
-                        .AddJsonFile(@"Config/Serilog.json", true);
-
-                    if (hostBuilder.HostingEnvironment.IsDevelopment())
-                        configuration.AddUserSecrets<Program>();
-
                     Log.Logger = new LoggerConfiguration()
-                        .ReadFrom.Configuration(configuration.Build())
+                        .ReadFrom.Configuration(hostBuilder.Configuration.GetSection("Serilog"))
                         .CreateLogger();
 
                     configureLogging.AddSerilog();
