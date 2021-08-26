@@ -1,14 +1,19 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Serilog;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace GraphDatabaseSandbox
 {
@@ -81,16 +86,25 @@ namespace GraphDatabaseSandbox
                     services.AddHostedService<HostedService>();
                     services.AddHostedService<LifetimeEventsHostedService>();
 
+                    // Configure a cosmodDB connection
+                    services.AddSingleton(s => {
+                        var costmosDB = hostContext.Configuration.GetSection("CosmosDB");
+                        if (string.IsNullOrEmpty(costmosDB["PrimaryKey"]))
+                        {
+                            throw new InvalidOperationException(
+                                "Please specify a valid CosmosDBConnection in the appSettings.json. The PrimaryKey is required");
+                        }
+
+                        return new CosmosClientBuilder(costmosDB["EndpointUri"], costmosDB["PrimaryKey"]).Build();
+                    });
+
                     // Register a request filter at startup
                     services.AddTransient<IStartupFilter, ExampleStartupFilter>();
 
-                }).ConfigureLogging((hostBuilder, configureLogging) =>
+                }).UseSerilog((hostingContext, loggerConfiguration) => 
                 {
-                    Log.Logger = new LoggerConfiguration()
-                        .ReadFrom.Configuration(hostBuilder.Configuration.GetSection("Serilog"))
-                        .CreateLogger();
-
-                    configureLogging.AddSerilog();
+                    loggerConfiguration
+                        .ReadFrom.Configuration(hostingContext.Configuration);
                 });
     }
 }
