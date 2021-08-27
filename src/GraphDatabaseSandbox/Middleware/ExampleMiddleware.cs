@@ -22,6 +22,8 @@ namespace GraphDatabaseSandbox
             _logger.LogDebug("******* Middleware hit debug *******");
             _logger.LogInformation("******* Middleware hit info *******");
             var option = httpContext.Request.Query["option"];
+            var moo = httpContext.User.Identity.Name;
+            _logger.LogInformation("User is Auth?: {0}", moo);
 
             if (!string.IsNullOrWhiteSpace(option))
             {

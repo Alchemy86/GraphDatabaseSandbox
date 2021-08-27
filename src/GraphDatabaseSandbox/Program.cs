@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +13,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Web;
 using Serilog;
-using Serilog.Formatting.Compact;
-using Serilog.Sinks.SystemConsole.Themes;
 
 namespace GraphDatabaseSandbox
 {
@@ -46,6 +45,8 @@ namespace GraphDatabaseSandbox
                         app.UseAuthentication();
                         app.UseAuthorization();
 
+                        app.UseMiddleware<CustomMiddleware>();
+
                         app.UseEndpoints(endpoints =>
                         {
                             endpoints.MapControllerRoute(
@@ -71,7 +72,7 @@ namespace GraphDatabaseSandbox
                 {
                     services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
                         .AddMicrosoftIdentityWebApp(hostContext.Configuration.GetSection("AzureAd"));
-
+                        
                     services.AddControllers(options =>
                     {
                         options.RespectBrowserAcceptHeader = true; // false by default
